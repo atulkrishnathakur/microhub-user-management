@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir --upgrade -r /microhub-user-management/requiremen
 COPY ./app /microhub-user-management/app
 
 # this is default command. It will run after container start
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000","--reload"]

@@ -4,16 +4,19 @@ services:
     build:
       context: . # Directory containing the Dockerfile
       dockerfile: Dockerfile # Path to the Dockerfile for building the image
-    image: microhub-user-management:1.0 # Name and tag for the Docker image
+    image: microhub-user-management:latest # Name and tag for the Docker image
     container_name: microhubusermanagementcontainer # Custom name for the container
     ports:
       - "8081:8000" # Maps port 8000 on the host to port 8081 in the container. Here port map as <hostport>:<containerport>
     volumes:
       - webstore:/microhub-user-management/app/uploads # Persistent storage for application-specific data
       - webpdfstore:/microhub-user-management/app/generated_pdf
+      - .:/microhub-user-management # Bind-mounted local directory for live updates
+    env_file: 
+      - .env # Load all environment variables from the .env file  
     networks:
       - microhub_network # Connects to your custom network
-    restart: always # Automatically restarts the container if it stops or after a host machine reboot
+    restart: unless-stopped # better for development. better for debuging. If you want to stop container manually then it will not again start automatically. It will start automatically when system reboot
 
 volumes:
   webstore: # Named volume for FastAPI app data

@@ -1,20 +1,36 @@
 from fastapi import FastAPI
+from fastapi import FastAPI,Depends, HTTPException, Response, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+from app.router.router_base import api_router
+from app.router.web_router_base import web_router
+from app.exception.custom_exception import CustomException,unicorn_exception_handler
+# from app.middlewares.authchekermiddleware import AuthCheckerMiddleware
+from app.config.static_mount import mount_uploaded_files, mount_generated_pdf
 
-app = FastAPI()
+def include_router(app):
+    app.include_router(api_router)
+    app.include_router(web_router)
 
+def start_application():
+    app = FastAPI(
+        DEBUG=True,
+        title="microhub-user-management",
+        summary="This is a fastapi project",
+        description="This is fastapi project with sqlalchemy",
+        version="1.0.0",
+        openapi_url="/microhub-user-management.json",
+        docs_url="/microhub-user-management-docs",
+        redoc_url="/microhub-user-management-redoc",
+        root_path="/api",
+        root_path_in_servers=True,
+        )
+        
+    mount_uploaded_files(app)
+    mount_generated_pdf(app)    
+    include_router(app)
+    return app
 
-@app.get("/a1")
-def a1():
-    return {"message": "user management a1"}
-
-@app.get("/a2")
-def a2():
-    return {"message": "user management a2"}
-
-@app.get("/a3")
-def a3():
-    return {"message": "user management a3"}
-
-@app.get("/a4")
-def a4():
-    return {"message": "user management a4"}
+app = start_application()
+app.add_exception_handler(CustomException,unicorn_exception_handler)
+#app.add_middleware(AuthCheckerMiddleware, some_attribute="example_attribute")

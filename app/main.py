@@ -1,36 +1,79 @@
-from fastapi import FastAPI
 from fastapi import FastAPI,Depends, HTTPException, Response, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.encoders import jsonable_encoder
-from app.router.router_base import api_router
-from app.router.web_router_base import web_router
-from app.exception.custom_exception import CustomException,unicorn_exception_handler
-# from app.middlewares.authchekermiddleware import AuthCheckerMiddleware
-from app.config.static_mount import mount_uploaded_files, mount_generated_pdf
+from typing import Dict
+from fastapi import APIRouter,Depends,status,File,UploadFile,BackgroundTasks
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from sqlalchemy import (select,insert,update,delete,join,and_, or_ )
+from app.validation.emp_m import EmpSchemaIn,EmpSchemaOut,Status422Response,Status400Response
+from fastapi.responses import JSONResponse, ORJSONResponse
+from app.database.model_functions.emp_m import save_new_empm,update_image_empm, get_emp_by_id
+from app.exception.custom_exception import CustomException
+from app.config.message import empm_message
+from app.config.logconfig import loglogger
+import os
+from typing import Annotated
+from app.validation.emp_m import EmpSchemaOut
+from app.core.auth import getCurrentActiveEmp
+from datetime import datetime
+from app.config.jinja2_config import jinjatemplates
+from weasyprint import HTML
+from app.config.loadenv import envconst
 
-def include_router(app):
-    app.include_router(api_router)
-    app.include_router(web_router)
+app = FastAPI()
 
-def start_application():
-    app = FastAPI(
-        DEBUG=True,
-        title="microhub-user-management",
-        summary="This is a fastapi project",
-        description="This is fastapi project with sqlalchemy",
-        version="1.0.0",
-        openapi_url="/microhub-user-management.json",
-        docs_url="/microhub-user-management-docs",
-        redoc_url="/microhub-user-management-redoc",
-        root_path="/api",
-        root_path_in_servers=True,
-        )
+@app.post("/a1")
+def a1(data: Dict):
+    return {"message":"ddddd","data":data}
+
+
+@app.post("/a2")
+def a2(data: Dict):
+    return {"status":True,"code":200,"data":[data["empm"]]}
+
+
+@app.post(
+    "/emp-m-save",
+    response_model=EmpSchemaOut,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": Status422Response},
+        status.HTTP_400_BAD_REQUEST: {"model": Status400Response}
+    },
+    name="empmsave"
+    )
+def empSave(empm: EmpSchemaIn, db:Session = Depends(get_db)):
+    # I keep duplicate_email_checker function outside of try block because duplicate_email_checker function raise an exception. If duplicate_email_checker keep inside function then Exception class will except it because Exception is parrent class.
+    # Main point is raise keyword use the outside of try block.
+    EmpSchemaIn.duplicate_email_checker(db,empm.email)
+    try:
+        insertedData = save_new_empm(db=db, empm=empm)
+        http_status_code = status.HTTP_200_OK
+        datalist = list()
         
-    mount_uploaded_files(app)
-    mount_generated_pdf(app)    
-    include_router(app)
-    return app
+        datadict = {}
+        datadict['id'] = insertedData.id
+        datadict['emp_name'] = insertedData.emp_name
+        datadict['email'] = insertedData.email
+        datadict['status'] = insertedData.status
+        datadict['mobile'] = insertedData.mobile
+        datalist.append(datadict)
+        response_dict = {
+            "status_code": http_status_code,
+            "status":True,
+            "message":empm_message.SAVE_SUCCESS,
+            "data":datalist
+        }
+        response_data = EmpSchemaOut(**response_dict) 
+        response = JSONResponse(content=response_data.dict(),status_code=http_status_code)
+        loglogger.debug("RESPONSE:"+str(response_data.dict()))
+        return response
+    except Exception as e:
+        http_status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        data = {
+            "status_code": http_status_code,
+            "status":False,
+            "message":"Type:"+str(type(e))+", Message:"+str(e)
+        }
+        response = JSONResponse(content=data,status_code=http_status_code)
+        loglogger.debug("RESPONSE:"+str(data))
+        return response
 
-app = start_application()
-app.add_exception_handler(CustomException,unicorn_exception_handler)
-#app.add_middleware(AuthCheckerMiddleware, some_attribute="example_attribute")

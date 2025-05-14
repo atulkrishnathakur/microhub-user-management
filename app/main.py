@@ -18,6 +18,7 @@ from datetime import datetime
 from app.config.jinja2_config import jinjatemplates
 from weasyprint import HTML
 from app.config.loadenv import envconst
+from pydantic import (BaseModel,Field, model_validator, EmailStr, ModelWrapValidatorHandler, ValidationError, AfterValidator,BeforeValidator,PlainValidator, ValidatorFunctionWrapHandler)
 
 app = FastAPI()
 
@@ -31,49 +32,16 @@ def a2(data: Dict):
     return {"status":True,"code":200,"data":[data["empm"]]}
 
 
-@app.post(
-    "/emp-m-save",
-    response_model=EmpSchemaOut,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": Status422Response},
-        status.HTTP_400_BAD_REQUEST: {"model": Status400Response}
-    },
-    name="empmsave"
-    )
-def empSave(empm: EmpSchemaIn, db:Session = Depends(get_db)):
-    # I keep duplicate_email_checker function outside of try block because duplicate_email_checker function raise an exception. If duplicate_email_checker keep inside function then Exception class will except it because Exception is parrent class.
-    # Main point is raise keyword use the outside of try block.
-    EmpSchemaIn.duplicate_email_checker(db,empm.email)
-    try:
-        insertedData = save_new_empm(db=db, empm=empm)
-        http_status_code = status.HTTP_200_OK
-        datalist = list()
-        
-        datadict = {}
-        datadict['id'] = insertedData.id
-        datadict['emp_name'] = insertedData.emp_name
-        datadict['email'] = insertedData.email
-        datadict['status'] = insertedData.status
-        datadict['mobile'] = insertedData.mobile
-        datalist.append(datadict)
-        response_dict = {
-            "status_code": http_status_code,
-            "status":True,
-            "message":empm_message.SAVE_SUCCESS,
-            "data":datalist
-        }
-        response_data = EmpSchemaOut(**response_dict) 
-        response = JSONResponse(content=response_data.dict(),status_code=http_status_code)
-        loglogger.debug("RESPONSE:"+str(response_data.dict()))
-        return response
-    except Exception as e:
-        http_status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-        data = {
-            "status_code": http_status_code,
-            "status":False,
-            "message":"Type:"+str(type(e))+", Message:"+str(e)
-        }
-        response = JSONResponse(content=data,status_code=http_status_code)
-        loglogger.debug("RESPONSE:"+str(data))
-        return response
+
+class EmpSchemaInner(BaseModel):
+    emp_name: str = Field(example="Atul")
+    email: EmailStr = Field(example="atul@comsysapp.com")
+    mobile: str | None = Field(example="000000")
+    status: int | None = Field(default=1)
+    password: str = Field(example="aa")
+    confirm_password:str = Field(example="aa")
+
+@app.post("/a3")
+def a3(data: EmpSchemaInner):
+    return {"status":True,"code":200,"data":data}
 

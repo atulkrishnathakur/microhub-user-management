@@ -24,6 +24,7 @@ from datetime import datetime
 from app.config.jinja2_config import jinjatemplates
 from weasyprint import HTML
 from app.config.loadenv import envconst
+from pydantic import (BaseModel,Field, model_validator, EmailStr, ModelWrapValidatorHandler, ValidationError, AfterValidator,BeforeValidator,PlainValidator, ValidatorFunctionWrapHandler)
 
 app = FastAPI()
 
@@ -35,5 +36,19 @@ def a1(data: Dict):
 @app.post("/a2")
 def a2(data: Dict):
     return {"status":True,"code":200,"data":[data["empm"]]}
+
+
+
+class EmpSchemaInner(BaseModel):
+    emp_name: str = Field(example="Atul")
+    email: EmailStr = Field(example="atul@comsysapp.com")
+    mobile: str | None = Field(example="000000")
+    status: int | None = Field(default=1)
+    password: str = Field(example="aa")
+    confirm_password:str = Field(example="aa")
+
+@app.post("/a3")
+def a3(data: EmpSchemaInner):
+    return {"status":True,"code":200,"data":data}
 
 ```

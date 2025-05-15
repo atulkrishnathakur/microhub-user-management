@@ -16,25 +16,14 @@ from datetime import datetime
 from app.config.jinja2_config import jinjatemplates
 from weasyprint import HTML
 from app.config.loadenv import envconst
+from typing import Dict
 # from app.config.fastapi_mail_config import send_email, mailconf
 
 router = APIRouter()
 
-@router.post(
-    "emptest",
-    name="emptest"
-)
-def emptest(empm: EmpSchemaIn):
-    return empm.email
-
-
-@router.get("/a1")
-def a1():
-    return {"message": "user management a1"}
-
-@router.post("/posta1")
-def posta1():
-    return {"message": "user management post a1"}
+@router.post("/a3")
+def a3(data: Dict):
+    return {"message":"uuuuuuuuuu","data":data}
 
 
 @router.post(

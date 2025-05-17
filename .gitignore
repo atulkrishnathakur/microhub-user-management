@@ -9,4 +9,5 @@ app/validation/__pycache__
 app/exception/__pycache__
 venv
 app/logs/*.log
+logs/*.log
 .env

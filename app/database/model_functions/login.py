@@ -21,7 +21,7 @@ def get_emp_for_login(db,email):
         data = {
             "status_code": http_status_code,
             "status":False,
-            "message":e.errors()
+            "message":str(e)
         }
         response = JSONResponse(content=data,status_code=http_status_code)
         loglogger.debug("RESPONSE:"+str(data))

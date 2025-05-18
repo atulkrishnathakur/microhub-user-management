@@ -2,7 +2,7 @@ from fastapi import APIRouter,Depends,status,File,UploadFile,BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from sqlalchemy import (select,insert,update,delete,join,and_, or_ )
-from app.validation.emp_m import EmpSchemaIn,EmpSchemaOut,Status422Response,Status400Response,InEmpDetail
+from app.validation.emp_m import EmpSchemaIn,EmpSchemaOut,Status422Response,Status400Response
 from fastapi.responses import JSONResponse, ORJSONResponse
 from app.database.model_functions.emp_m import (save_new_empm,update_image_empm, get_emp_by_id, get_data_by_email)
 from app.exception.custom_exception import CustomException
@@ -17,7 +17,11 @@ from app.config.jinja2_config import jinjatemplates
 from weasyprint import HTML
 from app.config.loadenv import envconst
 from typing import Dict
+from app.validation.auth import (AuthCredentialIn,AuthOut, Logout,Status422Response,Status400Response,Status401Response)
+from app.core.auth import authenticate
 # from app.config.fastapi_mail_config import send_email, mailconf
+import sys
+
 
 router = APIRouter()
 
@@ -25,13 +29,12 @@ router = APIRouter()
 def a3(data: Dict):
     return {"message":"uuuuuuuuuu","data":data}
 
-@router.post("/get-emp-details",name="getempdetails")
-def getEmpDetails(emp:InEmpDetail, db:Session = Depends(get_db)):
+@router.post("/verify-auth-credentials",name="verifycredentials")
+def getEmpDetails(credentials:AuthCredentialIn, db:Session = Depends(get_db)):
     try:
-        empObj = get_data_by_email(db=db, email=emp.email)
+        empObj = authenticate(credentials.email, credentials.password, db)
         http_status_code = status.HTTP_200_OK
         datalist = list()
-        
         datadict = {}
         datadict['id'] = empObj.id
         datadict['emp_name'] = empObj.emp_name
@@ -42,13 +45,16 @@ def getEmpDetails(emp:InEmpDetail, db:Session = Depends(get_db)):
         response_dict = {
             "status_code": http_status_code,
             "status":True,
-            "message":empm_message.SAVE_SUCCESS,
+            "message":empm_message.EMP_M_BY_EMAIL,
             "data":datalist
         }
         response_data = EmpSchemaOut(**response_dict) 
         response = JSONResponse(content=response_data.dict(),status_code=http_status_code)
         loglogger.debug("RESPONSE:"+str(response_data.dict()))
         return response
+    except CustomException as ce:
+        # If you raise the Custom exception in try block so you except the custom exception and return object 
+        return ce
     except Exception as e:
         http_status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
         data = {

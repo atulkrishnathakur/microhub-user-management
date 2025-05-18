@@ -94,7 +94,4 @@ class Status400Response(BaseModel):
     status:bool = Field(default=False)
     message:str | None = "Bad request"
     data:list | None = []
-    
-class InEmpDetail(BaseModel):
-    email: EmailStr = Field(example="atul@comsysapp.com")
 

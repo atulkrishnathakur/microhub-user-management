@@ -28,6 +28,7 @@ class CsmMessage:
     CS_UPDATE_MESSAGE: str = "CS name successfully updated"
     CS_GRP_M_ID_NOT_EXIST: str = "Given cs_grp_m_id is not exist"
     
+    
 csmmessage = CsmMessage()
 
 
@@ -40,6 +41,7 @@ class EmpmMessage:
     PASS_NOT_MATCH: str = "Password and confirm password not match"
     SAVE_SUCCESS: str = "Emp m successfully created"
     EMAIL_DUPLICATE: str = "Duplicate email found"
+    EMP_M_BY_EMAIL: str = "Emp details by email"
 
 empm_message = EmpmMessage()
 

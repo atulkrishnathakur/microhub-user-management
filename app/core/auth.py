@@ -13,9 +13,10 @@ from app.validation.emp_m import EmpSchemaOut
 from app.validation.auth import TokenData
 from app.config.loadenv import envconst
 from app.core.httpbearer import get_api_token
+import sys
 
 def authenticate(email,password,db):
-    dbempm = get_emp_for_login(db,email)
+    dbempm = get_emp_for_login(db=db,email=email)
     if not dbempm:
         raise CustomException(
             status_code=status.HTTP_401_UNAUTHORIZED,
